@@ -2,7 +2,6 @@
 // CUSTOMERS SCREEN
 // ============================
 package com.supermarket.app.ui.customers
-import androidx.lifecycle.kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main)
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
