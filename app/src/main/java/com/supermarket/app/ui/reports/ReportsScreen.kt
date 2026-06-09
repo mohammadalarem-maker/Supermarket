@@ -2,6 +2,7 @@
 // REPORTS SCREEN
 // ============================
 package com.supermarket.app.ui.reports
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.material.ExperimentalMaterialApi::class)
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*

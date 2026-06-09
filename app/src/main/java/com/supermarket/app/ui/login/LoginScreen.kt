@@ -104,8 +104,7 @@ fun LoginScreen(
             Spacer(Modifier.height(70.dp))
 
             // Logo area
-            AnimatedVisibility(visible, enter = slideInVertically({ -120 },
-                spring(Spring.DampingRatioMediumBouncy)) + fadeIn()) {
+            AnimatedVisibility(visible, enter = slideInVertically()) + fadeIn()) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
                     // Animated cart icon in glowing box
@@ -168,8 +167,7 @@ fun LoginScreen(
             Spacer(Modifier.height(36.dp))
 
             // Login card
-            AnimatedVisibility(visible, enter = slideInVertically({ 200 },
-                spring(Spring.DampingRatioMediumBouncy)) + fadeIn(tween(500, 200))) {
+            AnimatedVisibility(visible, enter = slideInVertically()) + fadeIn(tween(500, 200))) {
 
                 Card(
                     Modifier.fillMaxWidth().border(

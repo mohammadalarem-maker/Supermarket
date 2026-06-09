@@ -1,4 +1,5 @@
 package com.supermarket.app.ui.purchases
+import androidx.lifecycle.viewModelScope
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
