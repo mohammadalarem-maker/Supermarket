@@ -19,6 +19,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.supermarket.app.data.local.CustomerDao
 import com.supermarket.app.data.models.Customer
 import com.supermarket.app.data.models.MembershipLevel
@@ -35,14 +37,16 @@ import javax.inject.Inject
 class CustomersViewModel @Inject constructor(
     private val dao: CustomerDao,
     private val repo: FirebaseRepository
-) : androidx.lifecycle.ViewModel() {
+) : ViewModel() {
     private val _q = MutableStateFlow("")
     val customers: StateFlow<List<Customer>> = _q.debounce(300).flatMapLatest { q ->
         if (q.isEmpty()) dao.getAllCustomers() else dao.searchCustomers(q)
-    }.stateIn(androidx.lifecycle.viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    
     fun search(q: String) { _q.value = q }
+    
     fun add(name: String, phone: String, email: String) {
-        androidx.lifecycle.scope.launch {
+        viewModelScope.launch {
             val c = Customer(UUID.randomUUID().toString(), name, phone, email)
             dao.insertCustomer(c); repo.addCustomer(c)
         }
@@ -51,9 +55,8 @@ class CustomersViewModel @Inject constructor(
 
 @Composable
 fun CustomersScreen(vm: CustomersViewModel = hiltViewModel()) {
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
 
-    
     val customers by vm.customers.collectAsState()
     var q         by remember { mutableStateOf("") }
     var showAdd   by remember { mutableStateOf(false) }
@@ -89,8 +92,7 @@ fun CustomersScreen(vm: CustomersViewModel = hiltViewModel()) {
                 Box(Modifier.fillParentMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("👥", fontSize = 48.sp); Spacer(Modifier.height(10.dp))
-                        Text("لا يوجد عملاء", color = SMColors.TextMuted)
-                    }
+                        Text("لا يوجد عملاء", color = SMColors.TextMuted)                                           }
                 }
             }
         }
@@ -107,8 +109,7 @@ fun CustomersScreen(vm: CustomersViewModel = hiltViewModel()) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(name, { name = it }, label = { Text("الاسم *") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = smOutlinedColors())
                     OutlinedTextField(phone, { phone = it }, label = { Text("الهاتف") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = smOutlinedColors())
-                    OutlinedTextField(email, { email = it }, label = { Text("البريد الإلكتروني") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = smOutlinedColors())
-                }
+                    OutlinedTextField(email, { email = it }, label = { Text("البريد الإلكتروني") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = smOutlinedColors())                                                                                                         }
             },
             confirmButton = { Button({ if (name.isNotEmpty()) { vm.add(name, phone, email); showAdd = false } }, colors = ButtonDefaults.buttonColors(containerColor = SMColors.Primary)) { Text("إضافة", color = Color.Black) } },
             dismissButton = { TextButton({ showAdd = false }) { Text("إلغاء", color = SMColors.TextSecondary) } }
