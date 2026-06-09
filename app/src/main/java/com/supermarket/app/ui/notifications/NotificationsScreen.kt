@@ -16,6 +16,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.supermarket.app.data.models.AppNotification
 import com.supermarket.app.data.models.NotificationType
 import com.supermarket.app.data.remote.FirebaseRepository
@@ -30,12 +32,12 @@ import javax.inject.Inject
 @HiltViewModel
 class NotificationsViewModel @Inject constructor(
     private val repo: FirebaseRepository
-) : androidx.lifecycle.ViewModel() {
+) : ViewModel() {
     private val _notifications = MutableStateFlow<List<AppNotification>>(emptyList())
     val notifications: StateFlow<List<AppNotification>> = _notifications
 
     init {
-        androidx.lifecycle.scope.launch {
+        viewModelScope.launch {
             repo.getNotifications().collect { _notifications.value = it }
         }
     }
@@ -44,9 +46,9 @@ class NotificationsViewModel @Inject constructor(
 
 @Composable
 fun NotificationsScreen(vm: NotificationsViewModel = hiltViewModel()) {
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
 
-    
+
     val notifications by vm.notifications.collectAsState()
     val dateFormat    = remember { SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault()) }
 
@@ -89,9 +91,6 @@ fun NotificationsScreen(vm: NotificationsViewModel = hiltViewModel()) {
 
 @Composable
 fun NotifCard(notif: AppNotification, dateFormat: SimpleDateFormat) {
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
-
-    
     val (color, icon, emoji) = when (notif.type) {
         NotificationType.SALE      -> Triple(SMColors.Primary,       Icons.Filled.ShoppingCart,   "🛒")
         NotificationType.LOW_STOCK -> Triple(SMColors.Warning,       Icons.Filled.Warning,         "⚠️")
@@ -108,8 +107,7 @@ fun NotifCard(notif: AppNotification, dateFormat: SimpleDateFormat) {
             containerColor = if (!notif.isRead) color.copy(0.08f) else SMColors.BgCard
         ),
         border = BorderStroke(1.dp, if (!notif.isRead) color.copy(0.3f) else SMColors.BgCardBorder)
-    ) {
-        Row(
+    ) {                                                                                                 Row(
             Modifier.padding(14.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.Top
@@ -126,10 +124,10 @@ fun NotifCard(notif: AppNotification, dateFormat: SimpleDateFormat) {
                     fontSize = 12.sp, lineHeight = 18.sp)
                 // Extra data (amount, cashier, etc.)
                 notif.data["total"]?.let {
-                    Text("المبلغ: $it ر", color = color, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                    Text("المبلغ:  ر", color = color, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 }
                 notif.data["cashier"]?.let {
-                    Text("الكاشير: $it", color = SMColors.TextMuted, fontSize = 10.sp)
+                    Text("الكاشير: ", color = SMColors.TextMuted, fontSize = 10.sp)
                 }
                 Text(dateFormat.format(Date(notif.createdAt)),
                     color = SMColors.TextMuted, fontSize = 10.sp)
