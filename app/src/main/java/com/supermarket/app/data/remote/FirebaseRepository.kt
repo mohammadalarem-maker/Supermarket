@@ -1,3 +1,4 @@
+// TEST_COMMIT_VERIFICATION_2026_06_10
 package com.supermarket.app.data.remote
 
 import android.util.Log
