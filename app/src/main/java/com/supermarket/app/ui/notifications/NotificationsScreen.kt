@@ -35,7 +35,7 @@ class NotificationsViewModel @Inject constructor(
     val notifications: StateFlow<List<AppNotification>> = _notifications
 
     init {
-        androidx.lifecycle.kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+        androidx.lifecycle.viewModelScope.launch {
             repo.getNotifications().collect { _notifications.value = it }
         }
     }
@@ -44,6 +44,7 @@ class NotificationsViewModel @Inject constructor(
 
 @Composable
 fun NotificationsScreen(vm: NotificationsViewModel = hiltViewModel()) {
+    val viewModelScope = androidx.compose.runtime.rememberCoroutineScope()
     val notifications by vm.notifications.collectAsState()
     val dateFormat    = remember { SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault()) }
 

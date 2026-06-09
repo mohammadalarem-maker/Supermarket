@@ -40,10 +40,10 @@ class PurchasesViewModel @Inject constructor(
     private val prefs: PrefsManager
 ) : androidx.lifecycle.ViewModel() {
     val purchases: StateFlow<List<Purchase>> = dao.getAllPurchases()
-        .stateIn(androidx.lifecycle.kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main), SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(androidx.lifecycle.viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun addPurchase(supplier: String, cost: Double, items: List<PurchaseItem>, paid: Double) {
-        androidx.lifecycle.kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+        androidx.lifecycle.viewModelScope.launch {
             val p = Purchase(
                 id = UUID.randomUUID().toString(),
                 supplierName = supplier,
@@ -61,6 +61,7 @@ class PurchasesViewModel @Inject constructor(
 
 @Composable
 fun PurchasesScreen(vm: PurchasesViewModel = hiltViewModel()) {
+    val viewModelScope = androidx.compose.runtime.rememberCoroutineScope()
     val purchases  by vm.purchases.collectAsState()
     val dateFormat = remember { SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()) }
     var showAdd    by remember { mutableStateOf(false) }

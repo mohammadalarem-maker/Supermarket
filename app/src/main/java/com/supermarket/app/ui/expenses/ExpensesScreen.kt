@@ -38,7 +38,7 @@ class ExpensesViewModel @Inject constructor(
     private val prefs: PrefsManager
 ) : androidx.lifecycle.ViewModel() {
     val expenses: StateFlow<List<Expense>> = dao.getAllExpenses()
-        .stateIn(androidx.lifecycle.kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main), SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(androidx.lifecycle.viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _totalMonth = MutableStateFlow(0.0)
     val totalMonth: StateFlow<Double> = _totalMonth
@@ -46,7 +46,7 @@ class ExpensesViewModel @Inject constructor(
     init { loadMonthTotal() }
 
     private fun loadMonthTotal() {
-        androidx.lifecycle.kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+        androidx.lifecycle.viewModelScope.launch {
             val cal = Calendar.getInstance()
             val end = cal.timeInMillis
             cal.set(Calendar.DAY_OF_MONTH, 1)
@@ -55,7 +55,7 @@ class ExpensesViewModel @Inject constructor(
     }
 
     fun add(title: String, amount: Double, category: ExpenseCategory, desc: String) {
-        androidx.lifecycle.kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+        androidx.lifecycle.viewModelScope.launch {
             val e = Expense(UUID.randomUUID().toString(), title, amount, category, desc, prefs.getUser()?.uid ?: "")
             dao.insertExpense(e)
             repo.addExpense(e)
@@ -64,13 +64,14 @@ class ExpensesViewModel @Inject constructor(
     }
 
     fun delete(id: String) {
-        androidx.lifecycle.kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch { dao.deleteExpense(id) }
+        androidx.lifecycle.viewModelScope.launch { dao.deleteExpense(id) }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExpensesScreen(vm: ExpensesViewModel = hiltViewModel()) {
+    val viewModelScope = androidx.compose.runtime.rememberCoroutineScope()
     val expenses    by vm.expenses.collectAsState()
     val totalMonth  by vm.totalMonth.collectAsState()
     val dateFormat  = remember { SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()) }

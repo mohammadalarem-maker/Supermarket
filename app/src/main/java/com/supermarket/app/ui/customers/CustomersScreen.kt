@@ -39,10 +39,10 @@ class CustomersViewModel @Inject constructor(
     private val _q = MutableStateFlow("")
     val customers: StateFlow<List<Customer>> = _q.debounce(300).flatMapLatest { q ->
         if (q.isEmpty()) dao.getAllCustomers() else dao.searchCustomers(q)
-    }.stateIn(androidx.lifecycle.kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main), SharingStarted.WhileSubscribed(5000), emptyList())
+    }.stateIn(androidx.lifecycle.viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     fun search(q: String) { _q.value = q }
     fun add(name: String, phone: String, email: String) {
-        androidx.lifecycle.kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+        androidx.lifecycle.viewModelScope.launch {
             val c = Customer(UUID.randomUUID().toString(), name, phone, email)
             dao.insertCustomer(c); repo.addCustomer(c)
         }
@@ -51,6 +51,7 @@ class CustomersViewModel @Inject constructor(
 
 @Composable
 fun CustomersScreen(vm: CustomersViewModel = hiltViewModel()) {
+    val viewModelScope = androidx.compose.runtime.rememberCoroutineScope()
     val customers by vm.customers.collectAsState()
     var q         by remember { mutableStateOf("") }
     var showAdd   by remember { mutableStateOf(false) }

@@ -41,21 +41,21 @@ class UsersViewModel @Inject constructor(
 
     init {
         currentUser.value = prefsManager.getUser()
-        androidx.lifecycle.kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+        androidx.lifecycle.viewModelScope.launch {
             firebaseRepository.getUsers().collect { _users.value = it }
         }
     }
 
     fun addUser(username: String, email: String, password: String, role: UserRole) {
-        androidx.lifecycle.kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+        androidx.lifecycle.viewModelScope.launch {
             firebaseRepository.registerUser(User(username = username, email = email, role = role), password)
         }
     }
     fun deactivate(uid: String) {
-        androidx.lifecycle.kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch { firebaseRepository.deactivateUser(uid) }
+        androidx.lifecycle.viewModelScope.launch { firebaseRepository.deactivateUser(uid) }
     }
     fun changePassword(newPass: String, onResult: (Boolean) -> Unit) {
-        androidx.lifecycle.kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+        androidx.lifecycle.viewModelScope.launch {
             val r = firebaseRepository.changePassword(newPass)
             onResult(r.isSuccess)
         }
@@ -66,6 +66,7 @@ class UsersViewModel @Inject constructor(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UsersScreen(viewModel: UsersViewModel = hiltViewModel()) {
+    val viewModelScope = androidx.compose.runtime.rememberCoroutineScope()
     val users       by viewModel.users.collectAsState()
     val me          by viewModel.currentUser.collectAsState()
     val isAdmin     = me?.role == UserRole.ADMIN
