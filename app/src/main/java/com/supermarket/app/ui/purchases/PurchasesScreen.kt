@@ -1,5 +1,6 @@
 package com.supermarket.app.ui.purchases
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewModel.viewModelScope
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -41,10 +42,10 @@ class PurchasesViewModel @Inject constructor(
     private val prefs: PrefsManager
 ) : androidx.lifecycle.ViewModel() {
     val purchases: StateFlow<List<Purchase>> = dao.getAllPurchases()
-        .stateIn(androidx.lifecycle.viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(androidx.lifecycle.viewModel.viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun addPurchase(supplier: String, cost: Double, items: List<PurchaseItem>, paid: Double) {
-        androidx.lifecycle.viewModelScope.launch {
+        androidx.lifecycle.viewModel.viewModelScope.launch {
             val p = Purchase(
                 id = UUID.randomUUID().toString(),
                 supplierName = supplier,

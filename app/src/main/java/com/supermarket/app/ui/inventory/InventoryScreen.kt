@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.material.ExperimentalMaterialApi::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.supermarket.app.ui.inventory
 
 import androidx.compose.foundation.*

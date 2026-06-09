@@ -1,5 +1,6 @@
 package com.supermarket.app.ui.expenses
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewModel.viewModelScope
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -39,7 +40,7 @@ class ExpensesViewModel @Inject constructor(
     private val prefs: PrefsManager
 ) : androidx.lifecycle.ViewModel() {
     val expenses: StateFlow<List<Expense>> = dao.getAllExpenses()
-        .stateIn(androidx.lifecycle.viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(androidx.lifecycle.viewModel.viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _totalMonth = MutableStateFlow(0.0)
     val totalMonth: StateFlow<Double> = _totalMonth
@@ -47,7 +48,7 @@ class ExpensesViewModel @Inject constructor(
     init { loadMonthTotal() }
 
     private fun loadMonthTotal() {
-        androidx.lifecycle.viewModelScope.launch {
+        androidx.lifecycle.viewModel.viewModelScope.launch {
             val cal = Calendar.getInstance()
             val end = cal.timeInMillis
             cal.set(Calendar.DAY_OF_MONTH, 1)
@@ -56,7 +57,7 @@ class ExpensesViewModel @Inject constructor(
     }
 
     fun add(title: String, amount: Double, category: ExpenseCategory, desc: String) {
-        androidx.lifecycle.viewModelScope.launch {
+        androidx.lifecycle.viewModel.viewModelScope.launch {
             val e = Expense(UUID.randomUUID().toString(), title, amount, category, desc, prefs.getUser()?.uid ?: "")
             dao.insertExpense(e)
             repo.addExpense(e)
@@ -65,7 +66,7 @@ class ExpensesViewModel @Inject constructor(
     }
 
     fun delete(id: String) {
-        androidx.lifecycle.viewModelScope.launch { dao.deleteExpense(id) }
+        androidx.lifecycle.viewModel.viewModelScope.launch { dao.deleteExpense(id) }
     }
 }
 

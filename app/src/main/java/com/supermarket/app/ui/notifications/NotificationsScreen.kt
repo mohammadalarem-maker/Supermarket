@@ -1,5 +1,6 @@
 package com.supermarket.app.ui.notifications
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewModel.viewModelScope
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -36,7 +37,7 @@ class NotificationsViewModel @Inject constructor(
     val notifications: StateFlow<List<AppNotification>> = _notifications
 
     init {
-        androidx.lifecycle.viewModelScope.launch {
+        androidx.lifecycle.viewModel.viewModelScope.launch {
             repo.getNotifications().collect { _notifications.value = it }
         }
     }

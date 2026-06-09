@@ -1,5 +1,6 @@
 package com.supermarket.app.ui.users
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewModel.viewModelScope
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -42,21 +43,21 @@ class UsersViewModel @Inject constructor(
 
     init {
         currentUser.value = prefsManager.getUser()
-        androidx.lifecycle.viewModelScope.launch {
+        androidx.lifecycle.viewModel.viewModelScope.launch {
             firebaseRepository.getUsers().collect { _users.value = it }
         }
     }
 
     fun addUser(username: String, email: String, password: String, role: UserRole) {
-        androidx.lifecycle.viewModelScope.launch {
+        androidx.lifecycle.viewModel.viewModelScope.launch {
             firebaseRepository.registerUser(User(username = username, email = email, role = role), password)
         }
     }
     fun deactivate(uid: String) {
-        androidx.lifecycle.viewModelScope.launch { firebaseRepository.deactivateUser(uid) }
+        androidx.lifecycle.viewModel.viewModelScope.launch { firebaseRepository.deactivateUser(uid) }
     }
     fun changePassword(newPass: String, onResult: (Boolean) -> Unit) {
-        androidx.lifecycle.viewModelScope.launch {
+        androidx.lifecycle.viewModel.viewModelScope.launch {
             val r = firebaseRepository.changePassword(newPass)
             onResult(r.isSuccess)
         }
