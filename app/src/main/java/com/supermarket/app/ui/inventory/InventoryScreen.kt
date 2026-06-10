@@ -2,7 +2,6 @@
 package com.supermarket.app.ui.inventory
 import com.supermarket.app.ui.smChipColors
 import com.supermarket.app.ui.smOutlinedColors
-import com.supermarket.app.ui.smOutlinedColors
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
