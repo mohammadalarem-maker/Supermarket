@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.supermarket.app.data.local.ProductDao
 import com.supermarket.app.data.local.SaleDao
 import com.supermarket.app.data.models.*
+import com.supermarket.app.data.remote.SyncRepository
 import com.supermarket.app.utils.PrefsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -17,7 +18,8 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val productDao: ProductDao,
     private val saleDao: SaleDao,
-    private val prefsManager: PrefsManager
+    private val prefsManager: PrefsManager,
+    private val syncRepository: SyncRepository
 ) : ViewModel() {
 
     private val _currentUser = MutableStateFlow<User?>(null)
@@ -44,8 +46,11 @@ class HomeViewModel @Inject constructor(
 
     init {
         _currentUser.value = prefsManager.getUser()
-        loadStats()
-        loadWeeklyData()
+        viewModelScope.launch {
+            syncRepository.syncAll()
+            loadStats()
+            loadWeeklyData()
+        }
         observeLowStock()
     }
 

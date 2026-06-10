@@ -4,7 +4,9 @@ import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.supermarket.app.data.local.*
 import com.supermarket.app.data.models.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,7 +21,7 @@ class SyncRepository @Inject constructor(
 ) {
     private val TAG = "SyncRepo"
 
-    suspend fun syncAll() {
+    suspend fun syncAll() = withContext(Dispatchers.IO) {
         syncProducts()
         syncSales()
         syncCustomers()
