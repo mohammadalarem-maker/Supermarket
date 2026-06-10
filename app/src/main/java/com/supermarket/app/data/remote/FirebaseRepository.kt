@@ -46,11 +46,15 @@ class FirebaseRepository @Inject constructor(
     }
 
     suspend fun registerUser(user: User, password: String): Result<User> {
+        val adminEmail = auth.currentUser?.email
         return try {
             val r   = auth.createUserWithEmailAndPassword(user.email, password).await()
             val uid = r.user?.uid ?: throw Exception("Failed")
             val newUser = user.copy(uid = uid)
             usersCol().document(uid).set(newUser).await()
+            if (adminEmail != null) {
+                try { auth.signInWithEmailAndPassword(adminEmail, "1234567").await() } catch (e2: Exception) { Log.e(TAG, "Re-login Error", e2) }
+            }
             Result.success(newUser)
         } catch (e: Exception) { Log.e(TAG, "Register Error", e); Result.failure(e) }
     }
