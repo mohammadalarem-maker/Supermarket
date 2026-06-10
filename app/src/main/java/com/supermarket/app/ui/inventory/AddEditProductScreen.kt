@@ -1,4 +1,5 @@
 package com.supermarket.app.ui.inventory
+import com.supermarket.app.ui.smOutlinedColors
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -179,6 +180,3 @@ fun SMSectionCard(title: String, icon: ImageVector, content: @Composable ColumnS
 fun SMField(label: String, value: String, icon: ImageVector, keyboardType: KeyboardType = KeyboardType.Text, modifier: Modifier = Modifier.fillMaxWidth(), onValueChange: (String) -> Unit) {
     OutlinedTextField(value = value, onValueChange = onValueChange, label = { Text(label) }, leadingIcon = { Icon(icon, null, tint = SMColors.TextSecondary, modifier = Modifier.size(20.dp)) }, modifier = modifier, shape = RoundedCornerShape(14.dp), colors = smOutlinedColors(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = keyboardType))
 }
-
-@Composable
-fun smOutlinedColors() = OutlinedTextFieldDefaults.colors(focusedBorderColor = SMColors.Primary, unfocusedBorderColor = SMColors.BgCardBorder, focusedLabelColor = SMColors.Primary, unfocusedLabelColor = SMColors.TextSecondary, focusedTextColor = SMColors.TextPrimary, unfocusedTextColor = SMColors.TextPrimary, focusedContainerColor = SMColors.BgCard, unfocusedContainerColor = SMColors.BgSurface)

@@ -1,5 +1,6 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.supermarket.app.ui.inventory
+import com.supermarket.app.ui.smOutlinedColors
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -226,25 +227,3 @@ fun StatPill(label: String, value: String, color: Color, modifier: Modifier) {
         }
     }
 }
-
-@Composable
-fun smOutlinedColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor    = SMColors.Primary,
-    unfocusedBorderColor  = SMColors.BgCardBorder,
-    focusedLabelColor     = SMColors.Primary,
-    unfocusedLabelColor   = SMColors.TextSecondary,
-    cursorColor           = SMColors.Primary,
-    focusedTextColor      = SMColors.TextPrimary,
-    unfocusedTextColor    = SMColors.TextPrimary,
-    focusedContainerColor = SMColors.BgCard,
-    unfocusedContainerColor = SMColors.BgSurface
-)
-
-@Composable
-fun smChipColors() = FilterChipDefaults.filterChipColors(
-    selectedContainerColor = SMColors.Primary.copy(0.2f),
-    selectedLabelColor     = SMColors.Primary,
-    selectedLeadingIconColor = SMColors.Primary,
-    containerColor         = SMColors.BgCard,
-    labelColor             = SMColors.TextSecondary
-)
