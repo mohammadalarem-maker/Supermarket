@@ -19,6 +19,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.supermarket.app.data.models.Product
 import com.supermarket.app.data.models.ProductCategory
 import com.supermarket.app.ui.theme.SMColors
+import com.supermarket.app.ui.sales.NewSaleViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -28,7 +29,8 @@ fun InventoryScreen(
     onAddProduct: () -> Unit,
     onEditProduct: (String) -> Unit,
     showExpiring: Boolean = false,
-    viewModel: InventoryViewModel = hiltViewModel()
+    viewModel: InventoryViewModel = hiltViewModel(),
+    saleViewModel: NewSaleViewModel = hiltViewModel() // إضافة الـ ViewModel الخاص بالمبيعات هنا للربط
 ) {
     val products       by viewModel.products.collectAsState()
     val searchQuery    by viewModel.searchQuery.collectAsState()
@@ -50,10 +52,11 @@ fun InventoryScreen(
             placeholder = { Text("بحث بالاسم أو الباركود...") },
             leadingIcon  = { Icon(Icons.Outlined.Search, null, tint = SMColors.TextSecondary) },
             trailingIcon = {
-                if (searchQuery.isNotEmpty())
+                if (searchQuery.isNotEmpty()) {
                     IconButton({ viewModel.onSearchChange("") }) {
                         Icon(Icons.Filled.Clear, null, tint = SMColors.TextSecondary)
                     }
+                }
             },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -107,6 +110,7 @@ fun InventoryScreen(
             items(displayed, key = { it.id }) { product ->
                 ProductCard(
                     product  = product,
+                    onProductClick = { saleViewModel.addToCart(product) }, // استدعاء دالة الإضافة عند النقر
                     onEdit   = { onEditProduct(product.id) },
                     onDelete = { deleteTarget = product }
                 )
@@ -147,7 +151,12 @@ fun InventoryScreen(
 }
 
 @Composable
-fun ProductCard(product: Product, onEdit: () -> Unit, onDelete: () -> Unit) {
+fun ProductCard(
+    product: Product,
+    onProductClick: () -> Unit, // دالة النقر الجديدة لقالب البطاقة
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
     val catColor = Color(product.category.color)
     val stockColor = when {
         product.quantity == 0               -> SMColors.Error
@@ -158,7 +167,9 @@ fun ProductCard(product: Product, onEdit: () -> Unit, onDelete: () -> Unit) {
         product.expiryDate < System.currentTimeMillis() + 7L * 24 * 60 * 60 * 1000
 
     Card(
-        Modifier.fillMaxWidth(),
+        Modifier
+            .fillMaxWidth()
+            .clickable { onProductClick() }, // جعل البطاقة كاملة قابلة للضغط
         shape  = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = SMColors.BgCard),
         border = BorderStroke(1.dp, if (expiryWarning) SMColors.Warning.copy(0.4f) else SMColors.BgCardBorder)
