@@ -40,7 +40,7 @@ class NewSaleViewModel @Inject constructor(
 
     val searchResults: StateFlow<List<Product>> = _searchQuery
         .debounce(250)
-        .flatMapLatest { q -> if (q.isEmpty()) flowOf(emptyList()) else productDao.searchProducts(q) }
+        .flatMapLatest { q -> productDao.searchProducts(q) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val subtotal: StateFlow<Double> = _cartItems
