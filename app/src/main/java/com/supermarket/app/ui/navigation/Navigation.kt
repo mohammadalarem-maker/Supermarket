@@ -5,6 +5,11 @@ import androidx.compose.runtime.*
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.*
 import androidx.navigation.compose.*
+import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import com.supermarket.app.ui.home.DashboardScreen
 import com.supermarket.app.ui.home.HomeViewModel
 import com.supermarket.app.ui.home.MainScreen
@@ -13,7 +18,6 @@ import com.supermarket.app.ui.inventory.AddEditProductScreen
 import com.supermarket.app.ui.login.LoginScreen
 import com.supermarket.app.ui.login.LoginViewModel
 import com.supermarket.app.ui.sales.SalesScreen
-import com.supermarket.app.ui.sales.NewSaleScreen
 import com.supermarket.app.ui.reports.ReportsScreen
 import com.supermarket.app.ui.users.UsersScreen
 import com.supermarket.app.ui.customers.CustomersScreen
@@ -41,7 +45,6 @@ sealed class Screen(val route: String) {
     object Expiring      : Screen("expiring")
 }
 
-// All routes that show inside the drawer shell
 private val drawerRoutes = setOf(
     "home","inventory","sales","new_sale","reports","users",
     "customers","purchases","expenses","settings","notifications","expiring","add_product"
@@ -56,7 +59,6 @@ fun AppNavigation(navController: NavHostController) {
 
     NavHost(navController = navController, startDestination = startDestination) {
 
-        // Login - no drawer
         composable(Screen.Login.route) {
             LoginScreen(
                 onLoginSuccess = { _ ->
@@ -68,7 +70,6 @@ fun AppNavigation(navController: NavHostController) {
             )
         }
 
-        // All screens inside MainScreen (drawer shell)
         composable(Screen.Home.route) {
             MainScreen(
                 currentRoute = "home",
@@ -110,7 +111,9 @@ fun AppNavigation(navController: NavHostController) {
             MainScreen("sales", { navController.navigate(it) }, {
                 navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
             }) {
-                SalesScreen(onNewSale = { navController.navigate(Screen.NewSale.route) })
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("سجل المبيعات (قيد التحديث ليتوافق مع نقطة البيع الجديدة)")
+                }
             }
         }
 
@@ -118,9 +121,9 @@ fun AppNavigation(navController: NavHostController) {
             MainScreen("new_sale", { navController.navigate(it) }, {
                 navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
             }) {
-                NewSaleScreen(
-                    onBack        = { navController.popBackStack() },
-                    onSaleComplete= { navController.popBackStack() }
+                SalesScreen(
+                    onNavigateToAddProduct = { navController.navigate(Screen.AddProduct.createRoute()) },
+                    onNavigateToAddCategory = { /* سيتم إضافة المسار لاحقاً */ }
                 )
             }
         }

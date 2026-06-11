@@ -110,7 +110,7 @@ fun SalesScreen(
         ModalBottomSheet(
             onDismissRequest = { showPaySheet = false },
             containerColor = SMColors.BgCard,
-            dragHandle = { BottomSheetDefaults.DragHandle(tint = SMColors.BgCardBorder) }
+            dragHandle = { BottomSheetDefaults.DragHandle(color = SMColors.BgCardBorder) }
         ) {
             Column(
                 modifier = Modifier
@@ -146,10 +146,10 @@ fun SalesScreen(
                     }
 
                     ElevatedButton(
-                        onClick = { selectedMethod = PaymentMethod.NETWORK },
+                        onClick = { selectedMethod = PaymentMethod.CARD },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.elevatedButtonColors(containerColor = if (selectedMethod == PaymentMethod.NETWORK) SMColors.Primary else SMColors.BgSurface)
+                        colors = ButtonDefaults.elevatedButtonColors(containerColor = if (selectedMethod == PaymentMethod.CARD) SMColors.Primary else SMColors.BgSurface)
                     ) {
                         Icon(Icons.Filled.CreditCard, null, tint = Color.Black)
                         Spacer(Modifier.width(6.dp))
@@ -249,7 +249,7 @@ fun POSProductCard(
             ) {
                 Text(text = product.name, color = SMColors.TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 Text(text = "${product.sellPrice} ر.ي", color = SMColors.Primary, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold)
-                Text(text = "المخزن: ${product.quantity}", color = if ((product.quantity.toIntOrNull() ?: 0) <= 5) SMColors.Error else SMColors.TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Medium)
+                Text(text = "المخزن: ${product.quantity}", color = if ((product.quantity.toString().toDoubleOrNull() ?: 0) <= 5) SMColors.Error else SMColors.TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Medium)
             }
         }
     }
