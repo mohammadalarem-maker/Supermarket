@@ -249,7 +249,7 @@ fun POSProductCard(
             ) {
                 Text(text = product.name, color = SMColors.TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 Text(text = "${product.sellPrice} ر.ي", color = SMColors.Primary, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold)
-                Text(text = "المخزن: ${product.quantity}", color = if ((product.quantity.toString().toDoubleOrNull() ?: 0) <= 5) SMColors.Error else SMColors.TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Medium)
+                Text(text = "المخزن: ${product.quantity}", color = if ((product.quantity.toString().toDoubleOrNull() ?: 0.0) <= 5.0) SMColors.Error else SMColors.TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Medium)
             }
         }
     }
