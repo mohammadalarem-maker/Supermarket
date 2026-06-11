@@ -269,7 +269,7 @@ fun StudioProductCard(
                         .data(imageRequestData)
                         .crossfade(true)
                         .size(200, 200) // تقليص بالذاكرة لضمان السلاسة
-                        .precision(coil.request.Precision.INEXACT)
+                        
                         .build(),
                     contentDescription = product.name,
                     contentScale = ContentScale.Crop,
