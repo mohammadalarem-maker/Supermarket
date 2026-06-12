@@ -1,6 +1,6 @@
 package com.supermarket.app.ui.settings
-import com.supermarket.app.ui.smOutlinedColors
 
+import com.supermarket.app.ui.smOutlinedColors
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +19,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.supermarket.app.data.remote.FirebaseRepository
 import com.supermarket.app.ui.components.SMField
 import com.supermarket.app.ui.theme.SMColors
+import com.supermarket.app.ui.theme.isAppDarkMode
 import com.supermarket.app.utils.PrefsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -86,6 +87,27 @@ fun SettingsScreen(
             }
             SMField("حد تنبيه المخزون (قطعة)", lowStock.toString(), Icons.Filled.NotificationImportant, KeyboardType.Number) {
                 vm.setLowStock(it.toIntOrNull() ?: 10)
+            }
+        }
+
+        // إعدادات المظهر (الوضع الليلي والنهاري)
+        SMSettingsCard("إعدادات المظهر", Icons.Filled.DarkMode) {
+            Row(
+                Modifier.fillMaxWidth().background(SMColors.BgSurface, RoundedCornerShape(14.dp)).padding(14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("المظهر الداكن (الليلي)", color = SMColors.TextPrimary, fontSize = 14.sp)
+                    Text(if (isAppDarkMode) "الوضع الحالي: ليلي مريح للعين" else "الوضع الحالي: نهاري عالي الإضاءة", color = SMColors.TextMuted, fontSize = 11.sp)
+                }
+                Switch(
+                    checked = isAppDarkMode,
+                    onCheckedChange = { isAppDarkMode = it },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.Black,
+                        checkedTrackColor = SMColors.Primary
+                    )
+                )
             }
         }
 
