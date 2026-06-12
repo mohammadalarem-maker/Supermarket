@@ -29,6 +29,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import coil.compose.SubcomposeAsyncImage
 import androidx.compose.ui.layout.ContentScale
+import com.supermarket.app.ui.sales.SalesViewModel
 
 @Composable
 fun DashboardScreen(
@@ -40,28 +41,27 @@ fun DashboardScreen(
     val recentSales by viewModel.recentSales.collectAsState()
     val weeklySales by viewModel.weeklySales.collectAsState()
     val recentProducts by viewModel.recentProducts.collectAsState(initial = emptyList())
-
+                                    
     val context = LocalContext.current
     val barcodeScanner = remember { GmsBarcodeScanning.getClient(context) }
     val showNotFoundDialog by viewModel.showNotFoundDialog.collectAsState()
     val scannedBarcode by viewModel.scannedBarcode.collectAsState()
-
-    val timeFormat = remember { SimpleDateFormat("hh:mm a", Locale("ar")) }
+                                                                                                                              val timeFormat = remember { SimpleDateFormat("hh:mm a", Locale("ar")) }
     val dateFormat = remember { SimpleDateFormat("EEEE، d MMMM", Locale("ar")) }
     val now = remember { Date() }
-
+                             
     if (showNotFoundDialog && scannedBarcode != null) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissNotFoundDialog() },
             containerColor = SMColors.BgCard,
-            title = { 
+            title = {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Warning, null, tint = SMColors.Primary)
                     Text("صنف غير مسجل", color = SMColors.TextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
-            text = { 
-                Text("الباركود ($scannedBarcode) غير موجود في النظام. هل تريد الانتقال لتسجيله الآن؟", color = SMColors.TextSecondary, fontSize = 14.sp) 
+            text = {
+                Text("الباركود ($scannedBarcode) غير موجود في النظام. هل تريد الانتقال لتسجيله الآن؟", color = SMColors.TextSecondary, fontSize = 14.sp)
             },
             confirmButton = {
                 Button(
@@ -155,6 +155,9 @@ fun DashboardScreen(
             }
         }
 
+        // الميزة الجديدة: بطاقة تقسيم المبيعات لليوم حسب الموظفين
+        item { CashierSalesBreakdown() }
+
         // [6] المخطط البياني
         item { SalesChartCard(weeklySales) }
 
@@ -174,6 +177,66 @@ fun DashboardScreen(
 }
 
 // ==========================================
+// ميزة تقسيم المبيعات الحية حسب الموظف
+// ==========================================
+@Composable
+fun CashierSalesBreakdown(viewModel: SalesViewModel = hiltViewModel()) {
+    val cashierSales by viewModel.todaySalesByCashier.collectAsState()
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = SMColors.BgCard),
+        border = BorderStroke(1.dp, SMColors.BgCardBorder)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(SMColors.Primary.copy(0.12f), RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.People, null, tint = SMColors.Primary, modifier = Modifier.size(22.dp))
+                    }
+                    Column {
+                        Text("تقسيم مبيعات اليوم حسب الموظفين", color = SMColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            if (cashierSales.isEmpty()) {
+                Text("لا توجد عمليات بيع مسجلة للموظفين اليوم بعد.", color = SMColors.TextMuted, fontSize = 12.sp)
+            } else {
+                cashierSales.forEach { (cashierName, totalAmount) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.Person, null, tint = SMColors.TextSecondary, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = cashierName, color = SMColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        }
+                        Text(text = "${"%.1f".format(totalAmount)} ر", color = SMColors.Primary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ==========================================
 // تصميم مربع المنتجات الذي يحتوي على 4 صور مصغرة
 // ==========================================
 @Composable
@@ -184,7 +247,7 @@ fun ProductVisualCard(products: List<com.supermarket.app.data.models.Product>, t
                 Text("المنتجات", color = SMColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 Icon(Icons.Filled.Inventory2, null, tint = SMColors.AccentPurple, modifier = Modifier.size(16.dp))
             }
-            
+
             val items = products.take(4)
             Column(Modifier.fillMaxWidth().aspectRatio(1f).padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -208,7 +271,7 @@ fun MiniProductImage(product: com.supermarket.app.data.models.Product?, modifier
             if (product.imageUrl.isNotEmpty()) {
                 val context = LocalContext.current
                 val imgData = remember(product.imageUrl) {
-                    if (product.imageUrl.startsWith("http")) product.imageUrl 
+                    if (product.imageUrl.startsWith("http")) product.imageUrl
                     else try { android.util.Base64.decode(product.imageUrl, android.util.Base64.DEFAULT) } catch(e: Exception) { null }
                 }
                 SubcomposeAsyncImage(model = coil.request.ImageRequest.Builder(context).data(imgData).crossfade(true).size(150).build(), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
@@ -230,7 +293,7 @@ fun CategoryVisualCard(categories: List<ProductCategory>, modifier: Modifier, on
                 Text("الأقسام", color = SMColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 Icon(Icons.Filled.Widgets, null, tint = SMColors.AccentCyan, modifier = Modifier.size(16.dp))
             }
-            
+
             val items = categories.take(4)
             Column(Modifier.fillMaxWidth().aspectRatio(1f).padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -266,8 +329,10 @@ fun KpiCard(label: String, value: String, sub: String, icon: ImageVector, color:
                 Box(Modifier.size(8.dp).background(color, CircleShape))
             }
             Text(value, color = color, fontWeight = FontWeight.Black, fontSize = 20.sp)
-            Column { Text(label, color = SMColors.TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                Text(sub, color = SMColors.TextMuted, fontSize = 10.sp) }
+            Column {
+                Text(label, color = SMColors.TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                Text(sub, color = SMColors.TextMuted, fontSize = 10.sp)
+            }
         }
     }
 }
