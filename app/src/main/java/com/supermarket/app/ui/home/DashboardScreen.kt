@@ -21,9 +21,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.platform.LocalContext
 import com.supermarket.app.data.models.DashboardStats
 import com.supermarket.app.data.models.ProductCategory
 import com.supermarket.app.ui.theme.SMColors
+import com.supermarket.app.ui.navigation.Screen
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import java.text.SimpleDateFormat
 import java.util.*
 import coil.compose.SubcomposeAsyncImage
@@ -38,19 +41,57 @@ fun DashboardScreen(
     val lowStockProducts by viewModel.lowStockProducts.collectAsState()
     val recentSales by viewModel.recentSales.collectAsState()
     val weeklySales by viewModel.weeklySales.collectAsState()
-    
     val recentProducts by viewModel.recentProducts.collectAsState(initial = emptyList())
-    
+
+    val context = LocalContext.current
+    val barcodeScanner = remember { GmsBarcodeScanning.getClient(context) }
+    val showNotFoundDialog by viewModel.showNotFoundDialog.collectAsState()
+    val scannedBarcode by viewModel.scannedBarcode.collectAsState()
+
     val timeFormat = remember { SimpleDateFormat("hh:mm a", Locale("ar")) }
     val dateFormat = remember { SimpleDateFormat("EEEE، d MMMM", Locale("ar")) }
     val now = remember { Date() }
-    
+
+    // حوار تنبيهي ذكي يظهر عندما لا يتم العثور على الصنف الممسوح بالباركود
+    if (showNotFoundDialog && scannedBarcode != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissNotFoundDialog() },
+            containerColor = SMColors.BgCard,
+            title = { 
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Warning, null, tint = SMColors.Primary)
+                    Text("صنف غير مسجل", color = SMColors.TextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            },
+            text = { 
+                Text("الباركود ($scannedBarcode) غير موجود في النظام. هل تريد الانتقال لتسجيله الآن؟", color = SMColors.TextSecondary, fontSize = 14.sp) 
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.dismissNotFoundDialog()
+                        // الانتقال لصفحة الإضافة مع تمرير الرقم تلقائياً
+                        onNavigate(Screen.AddProduct.createRoute(barcode = scannedBarcode))
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = SMColors.Primary)
+                ) { 
+                    Text("تسجيل الآن", color = Color.Black, fontWeight = FontWeight.Bold) 
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissNotFoundDialog() }) { 
+                    Text("إلغاء", color = SMColors.TextMuted) 
+                }
+            }
+        )
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(SMColors.BgDeep),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Greeting + Date
+        // Greeting + Date + Barcode Scanner Action
         item {
             Row(
                 Modifier.fillMaxWidth(),
@@ -61,13 +102,36 @@ fun DashboardScreen(
                     Text("مرحباً 👋", color = SMColors.TextSecondary, fontSize = 13.sp)
                     Text(dateFormat.format(now), color = SMColors.TextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
-                // Clock
-                Box(
-                    Modifier.background(SMColors.BgCard, RoundedCornerShape(14.dp))
-                        .border(1.dp, SMColors.BgCardBorder, RoundedCornerShape(14.dp))
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(timeFormat.format(now), color = SMColors.Primary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    // زر قارئ الباركود الذكي المضاف حديثاً في أعلى الصفحة الرئيسية
+                    IconButton(
+                        onClick = {
+                            barcodeScanner.startScan()
+                                .addOnSuccessListener { res ->
+                                    res.rawValue?.let { code -> viewModel.checkBarcodeOnHome(code) }
+                                }
+                                .addOnFailureListener { e -> e.printStackTrace() }
+                        },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(SMColors.Primary.copy(0.12f), RoundedCornerShape(14.dp))
+                            .border(1.dp, SMColors.Primary.copy(0.3f), RoundedCornerShape(14.dp))
+                    ) {
+                        Icon(Icons.Filled.QrCodeScanner, contentDescription = "بحث بالباركود", tint = SMColors.Primary, modifier = Modifier.size(20.dp))
+                    }
+
+                    // Clock
+                    Box(
+                        Modifier.background(SMColors.BgCard, RoundedCornerShape(14.dp))
+                            .border(1.dp, SMColors.BgCardBorder, RoundedCornerShape(14.dp))
+                            .padding(horizontal = 14.dp, vertical = 8.dp)
+                    ) {
+                        Text(timeFormat.format(now), color = SMColors.Primary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    }
                 }
             }
         }
@@ -107,7 +171,7 @@ fun DashboardScreen(
                 }
             }
         }
-        
+
         // KPI Row 1
         item {
             Text("إحصائيات اليوم", color = SMColors.TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.5.sp)
@@ -147,21 +211,19 @@ fun DashboardScreen(
                 )
             }
         }
-        
+
         // Mini bar chart
         item {
             SalesChartCard(weeklySales)
         }
 
-        // ==========================================================
-        // قسم استوديو المنتجات النشطة مؤخراً (تحميل ذكي عبر Coil)
-        // ==========================================================
+        // Active Products Section
         item {
             Text(
-                text = "المنتجات النشطة مؤخراً", 
-                color = SMColors.TextSecondary, 
-                fontSize = 12.sp, 
-                fontWeight = FontWeight.SemiBold, 
+                text = "المنتجات النشطة مؤخراً",
+                color = SMColors.TextSecondary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.5.sp
             )
         }
@@ -202,14 +264,14 @@ fun DashboardScreen(
                 }
             }
         }
-        
+
         // Low stock alert
         if (lowStockProducts.isNotEmpty()) {
             item {
                 LowStockAlert(lowStockProducts.take(3)) { onNavigate("inventory") }
             }
         }
-        
+
         // Recent sales
         if (recentSales.isNotEmpty()) {
             item {
@@ -251,10 +313,9 @@ fun StudioProductCard(
             contentAlignment = Alignment.Center
         ) {
             if (product.imageUrl.isNotEmpty()) {
-                // 🚀 الحل السحري: تحويل النص المشفر إلى بايتات ليفهمها Coil
                 val imageRequestData = remember(product.imageUrl) {
                     if (product.imageUrl.startsWith("http")) {
-                        product.imageUrl // إذا كان رابط إنترنت (مستقبلاً)
+                        product.imageUrl
                     } else {
                         try {
                             android.util.Base64.decode(product.imageUrl, android.util.Base64.DEFAULT)
@@ -263,13 +324,11 @@ fun StudioProductCard(
                         }
                     }
                 }
-
                 SubcomposeAsyncImage(
                     model = coil.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
                         .data(imageRequestData)
                         .crossfade(true)
-                        .size(200, 200) // تقليص بالذاكرة لضمان السلاسة
-                        
+                        .size(200, 200)
                         .build(),
                     contentDescription = product.name,
                     contentScale = ContentScale.Crop,
@@ -298,7 +357,6 @@ fun StudioProductCard(
                 }
             }
         }
-        
         Column(modifier = Modifier.padding(horizontal = 4.dp)) {
             Text(
                 text = product.name,

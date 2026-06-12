@@ -37,19 +37,19 @@ class HomeViewModel @Inject constructor(
         .map { it.take(10) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // ==========================================================
-    // الدفق الجديد: جلب المنتجات وترتيبها لعرضها في خلاصة الاستوديو بالداش بورد
-    // ==========================================================
     val recentProducts: StateFlow<List<Product>> = productDao.getAllProducts()
-        .map { products -> 
-            // ترتيب المنتجات تنازلياً حسب المعرف أو الحركة لتظهر الأخيرة أولاً
-            products.sortedByDescending { it.id }.take(6) 
-        }
+        .map { products -> products.sortedByDescending { it.id }.take(6) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    // ==========================================================
 
     private val _weeklySales = MutableStateFlow<List<Pair<String, Double>>>(emptyList())
     val weeklySales: StateFlow<List<Pair<String, Double>>> = _weeklySales
+
+    // حالات تتبع فحص الباركود للشاشة الرئيسية
+    private val _scannedBarcode = MutableStateFlow<String?>(null)
+    val scannedBarcode: StateFlow<String?> = _scannedBarcode
+
+    private val _showNotFoundDialog = MutableStateFlow(false)
+    val showNotFoundDialog: StateFlow<Boolean> = _showNotFoundDialog
 
     init {
         _currentUser.value = prefsManager.getUser()
@@ -59,6 +59,25 @@ class HomeViewModel @Inject constructor(
             loadWeeklyData()
         }
         observeLowStock()
+    }
+
+    // دالة فحص الباركود الآمنة
+    fun checkBarcodeOnHome(barcode: String) {
+        viewModelScope.launch {
+            val allProducts = productDao.getAllProducts().firstOrNull() ?: emptyList()
+            val exists = allProducts.any { it.barcode == barcode }
+            if (!exists) {
+                _scannedBarcode.value = barcode
+                _showNotFoundDialog.value = true
+            } else {
+                // الصنف موجود بالفعل (يمكنك لاحقاً إضافة إشعار أو عرض تفاصيل المنتج هنا)
+            }
+        }
+    }
+
+    fun dismissNotFoundDialog() {
+        _showNotFoundDialog.value = false
+        _scannedBarcode.value = null
     }
 
     private fun loadStats() {

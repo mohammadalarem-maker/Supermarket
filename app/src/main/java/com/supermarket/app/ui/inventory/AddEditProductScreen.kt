@@ -41,6 +41,7 @@ import java.io.InputStream
 @Composable
 fun AddEditProductScreen(
     productId: String?,
+    barcode: String? = null,
     onBack: () -> Unit,
     onSaved: () -> Unit,
     viewModel: AddEditProductViewModel = hiltViewModel()
@@ -50,12 +51,17 @@ fun AddEditProductScreen(
     val error by viewModel.error.collectAsState()
     val context = LocalContext.current
 
-    // تهيئة قارئ الباركود الذكي من جوجل
     val barcodeScanner = remember { GmsBarcodeScanning.getClient(context) }
-
     val tempFile by remember { mutableStateOf(File(context.cacheDir, "temp_product_capture.jpg")) }
     val tempUri by remember { mutableStateOf(FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", tempFile)) }
     var bitmapPreview by remember { mutableStateOf<Bitmap?>(null) }
+
+    // تعبئة الباركود تلقائياً إذا كان ممرراً من شاشة أخرى
+    LaunchedEffect(barcode) {
+        if (!barcode.isNullOrEmpty()) {
+            viewModel.update { copy(barcode = barcode) }
+        }
+    }
 
     LaunchedEffect(state.imageUrl) {
         if (state.imageUrl.isNotEmpty() && bitmapPreview == null) {
@@ -116,7 +122,6 @@ fun AddEditProductScreen(
         SMSectionCard("معلومات المنتج", Icons.Filled.Label) {
             SMField("اسم المنتج *", state.name, Icons.Filled.Label) { viewModel.update { copy(name = it) } }
             
-            // حقل الباركود المطور مع أيقونة تشغيل الكاميرا والمستشعر الذكي
             SMField(
                 label = "الباركود",
                 value = state.barcode,
@@ -124,14 +129,12 @@ fun AddEditProductScreen(
                 trailingIcon = {
                     IconButton(onClick = {
                         barcodeScanner.startScan()
-                            .addOnSuccessListener { barcode ->
-                                barcode.rawValue?.let { scannedCode ->
-                                    viewModel.update { copy(barcode = scannedCode) }
-                                }
+                            .addOnSuccessListener { res ->
+                                res.rawValue?.let { code -> viewModel.update { copy(barcode = code) } }
                             }
                             .addOnFailureListener { e -> e.printStackTrace() }
                     }) {
-                        Icon(Icons.Filled.PhotoCamera, contentDescription = "مسح الباركود", tint = SMColors.Primary)
+                        Icon(Icons.Filled.PhotoCamera, contentDescription = "مسح", tint = SMColors.Primary)
                     }
                 }
             ) { viewModel.update { copy(barcode = it) } }

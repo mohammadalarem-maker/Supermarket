@@ -1,28 +1,26 @@
 package com.supermarket.app.ui.navigation
-import com.supermarket.app.ui.smOutlinedColors
 
-import androidx.compose.runtime.*
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.supermarket.app.ui.smOutlinedColors                    
+import androidx.compose.runtime.* import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.*
-import androidx.navigation.compose.*
-import androidx.compose.material3.Text
-import androidx.compose.foundation.layout.Box
+import androidx.navigation.compose.* import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.Box                     
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.supermarket.app.ui.home.DashboardScreen
-import com.supermarket.app.ui.home.HomeViewModel
+import com.supermarket.app.ui.home.DashboardScreen                
+import com.supermarket.app.ui.home.HomeViewModel                  
 import com.supermarket.app.ui.home.MainScreen
-import com.supermarket.app.ui.inventory.InventoryScreen
+import com.supermarket.app.ui.inventory.InventoryScreen           
 import com.supermarket.app.ui.inventory.AddEditProductScreen
 import com.supermarket.app.ui.login.LoginScreen
 import com.supermarket.app.ui.login.LoginViewModel
-import com.supermarket.app.ui.sales.SalesScreen
+import com.supermarket.app.ui.sales.SalesScreen                   
 import com.supermarket.app.ui.reports.ReportsScreen
 import com.supermarket.app.ui.users.UsersScreen
-import com.supermarket.app.ui.customers.CustomersScreen
-import com.supermarket.app.ui.purchases.PurchasesScreen
-import com.supermarket.app.ui.expenses.ExpensesScreen
+import com.supermarket.app.ui.customers.CustomersScreen           
+import com.supermarket.app.ui.purchases.PurchasesScreen           
+import com.supermarket.app.ui.expenses.ExpensesScreen             
 import com.supermarket.app.ui.settings.SettingsScreen
 import com.supermarket.app.ui.notifications.NotificationsScreen
 
@@ -30,8 +28,9 @@ sealed class Screen(val route: String) {
     object Login         : Screen("login")
     object Home          : Screen("home")
     object Inventory     : Screen("inventory")
-    object AddProduct    : Screen("add_product?id={id}") {
-        fun createRoute(id: String? = null) = if (id != null) "add_product?id=$id" else "add_product"
+    object AddProduct    : Screen("add_product?id={id}&barcode={barcode}") {
+        fun createRoute(id: String? = null, barcode: String? = null) = 
+            "add_product?id=${id ?: ""}&barcode=${barcode ?: ""}"
     }
     object Sales         : Screen("sales")
     object NewSale       : Screen("new_sale")
@@ -45,11 +44,6 @@ sealed class Screen(val route: String) {
     object Expiring      : Screen("expiring")
 }
 
-private val drawerRoutes = setOf(
-    "home","inventory","sales","new_sale","reports","users",
-    "customers","purchases","expenses","settings","notifications","expiring","add_product"
-)
-
 @Composable
 fun AppNavigation(navController: NavHostController) {
     val loginViewModel: LoginViewModel = hiltViewModel()
@@ -58,7 +52,6 @@ fun AppNavigation(navController: NavHostController) {
     val currentRoute = currentBackStack?.destination?.route?.substringBefore("?") ?: "home"
 
     NavHost(navController = navController, startDestination = startDestination) {
-
         composable(Screen.Login.route) {
             LoginScreen(
                 onLoginSuccess = { _ ->
@@ -92,15 +85,22 @@ fun AppNavigation(navController: NavHostController) {
             }
         }
 
-        composable(Screen.AddProduct.route,
-            arguments = listOf(navArgument("id") { nullable = true; defaultValue = null })
+        composable(
+            Screen.AddProduct.route,
+            arguments = listOf(
+                navArgument("id") { nullable = true; defaultValue = null },
+                navArgument("barcode") { nullable = true; defaultValue = null }
+            )
         ) { back ->
-            val productId = back.arguments?.getString("id")
+            val productId = back.arguments?.getString("id")?.takeIf { it.isNotEmpty() && it != "{id}" }
+            val barcode = back.arguments?.getString("barcode")?.takeIf { it.isNotEmpty() && it != "{barcode}" }
+            
             MainScreen("add_product", { navController.navigate(it) }, {
                 navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
             }) {
                 AddEditProductScreen(
                     productId = productId,
+                    barcode = barcode,
                     onBack    = { navController.popBackStack() },
                     onSaved   = { navController.popBackStack() }
                 )
