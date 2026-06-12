@@ -1,5 +1,4 @@
 package com.supermarket.app.ui.login
-import com.supermarket.app.ui.smOutlinedColors
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -33,8 +32,19 @@ class LoginViewModel @Inject constructor(
         }
         viewModelScope.launch {
             try {
-                // ① Local admin check - no Firebase needed
-                val local = repo.loginAdmin(username.trim(), password)
+                // 1. تنظيف المدخلات بذكاء
+                val cleanUsername = username.trim().lowercase().replace(" ", "")
+                val cleanPassword = password.trim()
+                
+                // 2. معالجة البريد الإلكتروني لتجنب تكرار علامة @
+                val email = if (cleanUsername.contains("@")) {
+                    cleanUsername
+                } else {
+                    "$cleanUsername@supermarket.app"
+                }
+
+                // ① فحص الأدمن المحلي أولاً
+                val local = repo.loginAdmin(cleanUsername, cleanPassword)
                 if (local.isSuccess) {
                     val user = local.getOrNull()!!
                     _currentUser.value = user
@@ -42,18 +52,19 @@ class LoginViewModel @Inject constructor(
                     onResult(true, user.role == UserRole.ADMIN, null)
                     return@launch
                 }
-                // ② Firebase
-                val fb = repo.loginWithEmailPassword("${username.trim()}@supermarket.app", password)
+                
+                // ② تسجيل الدخول عبر Firebase باستخدام البيانات المنظفة
+                val fb = repo.loginWithEmailPassword(email, cleanPassword)
                 if (fb.isSuccess) {
                     val user = fb.getOrNull()!!
                     _currentUser.value = user
                     prefs.saveUser(user)
                     onResult(true, user.role == UserRole.ADMIN, null)
                 } else {
-                    onResult(false, false, "اسم المستخدم أو كلمة المرور غير صحيحة")
+                    onResult(false, false, "بيانات الدخول غير صحيحة، تأكد من الاسم وكلمة المرور")
                 }
             } catch (e: Exception) {
-                onResult(false, false, "حدث خطأ: ${e.message}")
+                onResult(false, false, "حدث خطأ في الاتصال: ${e.message}")
             }
         }
     }
