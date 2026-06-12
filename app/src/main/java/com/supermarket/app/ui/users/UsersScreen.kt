@@ -1,7 +1,6 @@
 package com.supermarket.app.ui.users
-import com.supermarket.app.ui.smOutlinedColors
-import com.supermarket.app.ui.smOutlinedColors
 
+import com.supermarket.app.ui.smOutlinedColors
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -47,9 +46,15 @@ class UsersViewModel @Inject constructor(
         }
     }
 
-    fun addUser(username: String, email: String, password: String, role: UserRole) {
+    fun addUser(username: String, email: String, password: String, role: UserRole, onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
-            firebaseRepository.registerUser(User(username = username, email = email, role = role), password)
+            val result = firebaseRepository.registerUser(User(username = username, email = email, role = role), password)
+            if (result.isSuccess) {
+                onResult(true, "تمت إضافة المستخدم بنجاح")
+            } else {
+                val errorMsg = result.exceptionOrNull()?.message ?: "فشل غير معروف"
+                onResult(false, errorMsg)
+            }
         }
     }
 
@@ -93,7 +98,7 @@ fun UsersScreen(viewModel: UsersViewModel = hiltViewModel()) {
             }
         }
 
-        Text("المستخدمون (${users.size})", color = SMColors.TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Text("المستخدمون (${users.size})", color = SMColors.TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)      
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(users, key = { it.uid }) { user ->
@@ -117,22 +122,57 @@ fun UsersScreen(viewModel: UsersViewModel = hiltViewModel()) {
 
     if (showAdd) {
         var uname by remember { mutableStateOf("") }; var email by remember { mutableStateOf("") }; var pass by remember { mutableStateOf("") }; var role by remember { mutableStateOf(UserRole.CASHIER) }; var exp by remember { mutableStateOf(false) }
+        var addError by remember { mutableStateOf("") }
+        var isSubmitting by remember { mutableStateOf(false) }
+
         AlertDialog(
-            onDismissRequest = { showAdd = false }, containerColor = SMColors.BgCard,
-            title = { Text("إضافة مستخدم", color = SMColors.TextPrimary, fontWeight = FontWeight.Bold) },
+            onDismissRequest = { if (!isSubmitting) showAdd = false }, 
+            containerColor = SMColors.BgCard,
+            title = { Text("إضافة مستخدم جديد", color = SMColors.TextPrimary, fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(uname, { uname = it }, label = { Text("اسم المستخدم") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = smOutlinedColors())
-                    OutlinedTextField(email, { email = it }, label = { Text("البريد الإلكتروني") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = smOutlinedColors())
-                    OutlinedTextField(pass, { pass = it }, label = { Text("كلمة المرور") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = smOutlinedColors(), visualTransformation = PasswordVisualTransformation())
+                    if (addError.isNotEmpty()) {
+                        Text(addError, color = SMColors.Error, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                    OutlinedTextField(uname, { uname = it }, label = { Text("اسم المستخدم") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = smOutlinedColors(), enabled = !isSubmitting)
+                    OutlinedTextField(email, { email = it }, label = { Text("البريد الإلكتروني") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = smOutlinedColors(), enabled = !isSubmitting)
+                    OutlinedTextField(pass, { pass = it }, label = { Text("كلمة المرور") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = smOutlinedColors(), visualTransformation = PasswordVisualTransformation(), enabled = !isSubmitting)
                     ExposedDropdownMenuBox(exp, { exp = it }) {
-                        OutlinedTextField(role.nameAr, {}, readOnly = true, label = { Text("الصلاحية") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(exp) }, modifier = Modifier.fillMaxWidth().menuAnchor(), shape = RoundedCornerShape(12.dp), colors = smOutlinedColors())
+                        OutlinedTextField(role.nameAr, {}, readOnly = true, label = { Text("الصلاحية") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(exp) }, modifier = Modifier.fillMaxWidth().menuAnchor(), shape = RoundedCornerShape(12.dp), colors = smOutlinedColors(), enabled = !isSubmitting)
                         ExposedDropdownMenu(exp, { exp = false }, modifier = Modifier.background(SMColors.BgCard)) { UserRole.values().filter { it != UserRole.ADMIN }.forEach { r -> DropdownMenuItem(text = { Text(r.nameAr, color = SMColors.TextPrimary) }, onClick = { role = r; exp = false }) } }
                     }
                 }
             },
-            confirmButton = { Button({ viewModel.addUser(uname, email, pass, role); showAdd = false }, colors = ButtonDefaults.buttonColors(containerColor = SMColors.Primary)) { Text("إضافة", color = Color.Black) } },
-            dismissButton = { TextButton({ showAdd = false }) { Text("إلغاء", color = SMColors.TextSecondary) } }
+            confirmButton = { 
+                Button(
+                    onClick = {
+                        if (uname.isBlank() || email.isBlank() || pass.isBlank()) {
+                            addError = "الرجاء تعبئة جميع الحقول المطلوبة"
+                            return@Button
+                        }
+                        if (pass.length < 6) {
+                            addError = "يجب أن تكون كلمة المرور 6 أحرف على الأقل"
+                            return@Button
+                        }
+                        isSubmitting = true
+                        addError = ""
+                        viewModel.addUser(uname, email, pass, role) { success, message ->
+                            isSubmitting = false
+                            if (success) {
+                                showAdd = false
+                            } else {
+                                addError = message
+                            }
+                        }
+                    }, 
+                    colors = ButtonDefaults.buttonColors(containerColor = SMColors.Primary),
+                    enabled = !isSubmitting
+                ) { 
+                    if (isSubmitting) CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    else Text("إضافة", color = Color.Black) 
+                } 
+            },
+            dismissButton = { TextButton({ if (!isSubmitting) showAdd = false }) { Text("إلغاء", color = SMColors.TextSecondary) } }
         )
     }
 
