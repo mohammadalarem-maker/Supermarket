@@ -96,6 +96,16 @@ class FirebaseRepository @Inject constructor(
         }
     }
 
+    suspend fun deleteUser(uid: String): Result<Unit> {
+        return try {
+            usersCol().document(uid).delete().await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Delete User Error", e)
+            Result.failure(e)
+        }
+    }
+
     suspend fun changePassword(newPass: String): Result<Unit> {
         return try {
             auth.currentUser?.updatePassword(newPass)?.await() ?: throw Exception("Not logged in")
