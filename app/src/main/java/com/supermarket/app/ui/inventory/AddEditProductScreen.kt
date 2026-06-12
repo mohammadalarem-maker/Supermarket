@@ -1,6 +1,6 @@
 package com.supermarket.app.ui.inventory
-import com.supermarket.app.ui.smOutlinedColors
 
+import com.supermarket.app.ui.smOutlinedColors
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
@@ -32,6 +32,7 @@ import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.supermarket.app.data.models.ProductCategory
 import com.supermarket.app.ui.theme.SMColors
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
@@ -48,6 +49,9 @@ fun AddEditProductScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val context = LocalContext.current
+
+    // تهيئة قارئ الباركود الذكي من جوجل
+    val barcodeScanner = remember { GmsBarcodeScanning.getClient(context) }
 
     val tempFile by remember { mutableStateOf(File(context.cacheDir, "temp_product_capture.jpg")) }
     val tempUri by remember { mutableStateOf(FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", tempFile)) }
@@ -111,7 +115,27 @@ fun AddEditProductScreen(
 
         SMSectionCard("معلومات المنتج", Icons.Filled.Label) {
             SMField("اسم المنتج *", state.name, Icons.Filled.Label) { viewModel.update { copy(name = it) } }
-            SMField("الباركود", state.barcode, Icons.Filled.QrCode) { viewModel.update { copy(barcode = it) } }
+            
+            // حقل الباركود المطور مع أيقونة تشغيل الكاميرا والمستشعر الذكي
+            SMField(
+                label = "الباركود",
+                value = state.barcode,
+                icon = Icons.Filled.QrCode,
+                trailingIcon = {
+                    IconButton(onClick = {
+                        barcodeScanner.startScan()
+                            .addOnSuccessListener { barcode ->
+                                barcode.rawValue?.let { scannedCode ->
+                                    viewModel.update { copy(barcode = scannedCode) }
+                                }
+                            }
+                            .addOnFailureListener { e -> e.printStackTrace() }
+                    }) {
+                        Icon(Icons.Filled.PhotoCamera, contentDescription = "مسح الباركود", tint = SMColors.Primary)
+                    }
+                }
+            ) { viewModel.update { copy(barcode = it) } }
+
             SMField("الماركة", state.brand, Icons.Filled.Business) { viewModel.update { copy(brand = it) } }
             SMField("الوحدة", state.unit, Icons.Filled.Scale) { viewModel.update { copy(unit = it) } }
         }
@@ -188,6 +212,25 @@ fun SMSectionCard(title: String, icon: ImageVector, content: @Composable ColumnS
 }
 
 @Composable
-fun SMField(label: String, value: String, icon: ImageVector, keyboardType: KeyboardType = KeyboardType.Text, modifier: Modifier = Modifier.fillMaxWidth(), onValueChange: (String) -> Unit) {
-    OutlinedTextField(value = value, onValueChange = onValueChange, label = { Text(label) }, leadingIcon = { Icon(icon, null, tint = SMColors.TextSecondary, modifier = Modifier.size(20.dp)) }, modifier = modifier, shape = RoundedCornerShape(14.dp), colors = smOutlinedColors(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = keyboardType))
+fun SMField(
+    label: String, 
+    value: String, 
+    icon: ImageVector, 
+    keyboardType: KeyboardType = KeyboardType.Text, 
+    modifier: Modifier = Modifier.fillMaxWidth(), 
+    trailingIcon: @Composable (() -> Unit)? = null, 
+    onValueChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = value, 
+        onValueChange = onValueChange, 
+        label = { Text(label) }, 
+        leadingIcon = { Icon(icon, null, tint = SMColors.TextSecondary, modifier = Modifier.size(20.dp)) }, 
+        trailingIcon = trailingIcon,
+        modifier = modifier, 
+        shape = RoundedCornerShape(14.dp), 
+        colors = smOutlinedColors(), 
+        singleLine = true, 
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType)
+    )
 }
