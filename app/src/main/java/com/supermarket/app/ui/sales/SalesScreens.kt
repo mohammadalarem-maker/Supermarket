@@ -46,7 +46,7 @@ fun SalesScreen(
     var showPaySheet by remember { mutableStateOf(false) }
 
     val isCartNotEmpty = cartItems.isNotEmpty()
-    val context = LocalContext.current 
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -169,7 +169,7 @@ fun SalesScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text("مراجعة الفاتورة وإجراءات الدفع", color = SMColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                
+
                 Text("الأصناف الحالية في الفاتورة:", color = SMColors.TextSecondary, fontSize = 13.sp)
                 Column(
                     modifier = Modifier
@@ -192,7 +192,7 @@ fun SalesScreen(
                                     Text(saleItem.productName, color = SMColors.TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                     Text("${saleItem.unitPrice} ر.ي", color = SMColors.Primary, fontSize = 11.sp)
                                 }
-                                
+
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -204,7 +204,16 @@ fun SalesScreen(
                                     ) {
                                         Icon(Icons.Filled.Remove, null, tint = SMColors.TextPrimary, modifier = Modifier.size(14.dp))
                                     }
-                                    Text(text = saleItem.quantity.toInt().toString(), color = SMColors.TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    
+                                    Text(
+                                        text = saleItem.quantity.toInt().toString(), 
+                                        color = SMColors.TextPrimary, 
+                                        fontSize = 13.sp, 
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.width(40.dp),
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
+                                    
                                     IconButton(
                                         onClick = { viewModel.increaseQty(saleItem.productId) },
                                         modifier = Modifier.size(26.dp).background(SMColors.BgDeep, RoundedCornerShape(6.dp))
@@ -212,7 +221,7 @@ fun SalesScreen(
                                         Icon(Icons.Filled.Add, null, tint = SMColors.TextPrimary, modifier = Modifier.size(14.dp))
                                     }
                                 }
-                                
+
                                 IconButton(
                                     onClick = {
                                         viewModel.removeFromCart(saleItem.productId)
@@ -234,9 +243,8 @@ fun SalesScreen(
                     Text("الإجمالي المطلوب:", color = SMColors.TextSecondary, fontSize = 14.sp)
                     Text("${totalAmount} ر.ي", color = SMColors.Primary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
-                
+
                 Divider(color = SMColors.BgCardBorder)
-                
                 Text("طريقة الدفع:", color = SMColors.TextSecondary, fontSize = 14.sp)
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     ElevatedButton(
@@ -249,7 +257,7 @@ fun SalesScreen(
                         Spacer(Modifier.width(6.dp))
                         Text("نقداً", color = Color.Black, fontWeight = FontWeight.Bold)
                     }
-                    
+
                     ElevatedButton(
                         onClick = { selectedMethod = PaymentMethod.CARD },
                         modifier = Modifier.weight(1f),
@@ -271,18 +279,18 @@ fun SalesScreen(
                     shape = RoundedCornerShape(12.dp),
                     colors = com.supermarket.app.ui.smOutlinedColors()
                 )
-                
+
                 val totalAmountDouble = totalAmount.toString().toDoubleOrNull() ?: 0.0
                 val paidAmount = paidAmountStr.toDoubleOrNull() ?: totalAmountDouble
                 val change = (paidAmount - totalAmountDouble).coerceAtLeast(0.0)
-                
+
                 if (change > 0) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("المبلغ المتبقي (الفكة):", color = SMColors.TextSecondary, fontSize = 14.sp)
                         Text("${change} ر.ي", color = SMColors.Error, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                 }
-                
+
                 Button(
                     onClick = {
                         viewModel.completeSale(
