@@ -30,6 +30,7 @@ import java.util.*
 import coil.compose.SubcomposeAsyncImage
 import androidx.compose.ui.layout.ContentScale
 import com.supermarket.app.ui.sales.SalesViewModel
+import com.supermarket.app.ui.sales.NewSaleViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +53,6 @@ fun DashboardScreen(
     val dateFormat = remember { SimpleDateFormat("EEEE، d MMMM", Locale("ar")) }
     val now = remember { Date() }
 
-    // حالة تخزين الفاتورة المراد تعديلها
     var saleToEdit by remember { mutableStateOf<com.supermarket.app.data.models.Sale?>(null) }
 
     if (showNotFoundDialog && scannedBarcode != null) {
@@ -156,7 +156,6 @@ fun DashboardScreen(
         }
 
         item { CashierSalesBreakdown() }
-
         item { SalesChartCard(weeklySales) }
 
         if (lowStockProducts.isNotEmpty()) {
@@ -172,7 +171,6 @@ fun DashboardScreen(
         item { Spacer(Modifier.height(16.dp)) }
     }
 
-    // إظهار نافذة التعديل عند النقر على فاتورة
     saleToEdit?.let { sale ->
         SaleDetailsEditDialog(
             sale = sale,
@@ -382,12 +380,18 @@ fun RecentSaleRow(sale: com.supermarket.app.data.models.Sale, onClick: () -> Uni
 fun SaleDetailsEditDialog(
     sale: com.supermarket.app.data.models.Sale,
     onDismiss: () -> Unit,
-    onSaveChanges: (com.supermarket.app.data.models.Sale) -> Unit
+    onSaveChanges: (com.supermarket.app.data.models.Sale) -> Unit,
+    newSaleViewModel: NewSaleViewModel = hiltViewModel()
 ) {
     var editableItems by remember { mutableStateOf(sale.items) }
     var paymentMethod by remember { mutableStateOf(sale.paymentMethod) }
+    var printerAddress by remember { mutableStateOf("192.168.1.100") }
 
     val updatedTotal = editableItems.sumOf { it.quantity * it.unitPrice }
+
+    val currentSaleState = remember(editableItems, paymentMethod, updatedTotal) {
+        sale.copy(items = editableItems, total = updatedTotal, paymentMethod = paymentMethod)
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -405,7 +409,7 @@ fun SaleDetailsEditDialog(
                     Text("رقم الفاتورة: ${sale.invoiceNumber}", color = SMColors.TextMuted, fontSize = 12.sp)
                 }
 
-                LazyColumn(modifier = Modifier.heightIn(max = 240.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LazyColumn(modifier = Modifier.heightIn(max = 200.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(editableItems) { item ->
                         Row(Modifier.fillMaxWidth().background(SMColors.BgSurface, RoundedCornerShape(10.dp)).padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Column(modifier = Modifier.weight(1f)) {
@@ -424,16 +428,64 @@ fun SaleDetailsEditDialog(
                         }
                     }
                 }
+                
                 Divider(color = SMColors.BgCardBorder)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("الإجمالي الجديد:", color = SMColors.TextPrimary, fontWeight = FontWeight.SemiBold)
                     Text("$updatedTotal ر.ي", color = SMColors.Primary, fontWeight = FontWeight.Black)
                 }
+
+                Spacer(modifier = Modifier.height(2.dp))
+                Divider(color = SMColors.BgCardBorder.copy(alpha = 0.4f))
+                
+                OutlinedTextField(
+                    value = printerAddress,
+                    onValueChange = { printerAddress = it },
+                    label = { Text("عنوان / IP الطابعة الحرارية", fontSize = 11.sp) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = SMColors.Primary,
+                        unfocusedBorderColor = SMColors.BgCardBorder,
+                        textColor = SMColors.TextPrimary
+                    ),
+                    singleLine = true
+                )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { newSaleViewModel.printExistingSale(currentSaleState, "BT", printerAddress) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = SMColors.Primary.copy(0.12f)),
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, SMColors.Primary.copy(0.4f))
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Outlined.Receipt, null, tint = SMColors.Primary, modifier = Modifier.size(16.dp))
+                            Text("بلوتوث", color = SMColors.Primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    Button(
+                        onClick = { newSaleViewModel.printExistingSale(currentSaleState, "WIFI", printerAddress) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = SMColors.AccentCyan.copy(0.12f)),
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, SMColors.AccentCyan.copy(0.4f))
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Outlined.Receipt, null, tint = SMColors.AccentCyan, modifier = Modifier.size(16.dp))
+                            Text("واي فاي", color = SMColors.AccentCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
             Button(
-                onClick = { onSaveChanges(sale.copy(items = editableItems, total = updatedTotal, paymentMethod = paymentMethod)) },
+                onClick = { onSaveChanges(currentSaleState) },
                 colors = ButtonDefaults.buttonColors(containerColor = SMColors.Primary)
             ) { Text("حفظ التعديلات", color = Color.Black, fontWeight = FontWeight.Bold) }
         },

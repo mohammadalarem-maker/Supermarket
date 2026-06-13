@@ -42,14 +42,12 @@ class NewSaleViewModel @Inject constructor(
     private val _isLoading  = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
-    // تدفق لمراقبة صلاحية المستخدم الحالي والتحقق منها ديناميكياً
     private val _userRole = MutableStateFlow("CASHIER")
     val userRole: StateFlow<String> = _userRole.asStateFlow()
 
     init {
         viewModelScope.launch {
             val user = prefsManager.getUser()
-            // جلب الصلاحية بشكل آمن سواء كانت String أو Enum
             _userRole.value = user?.role?.toString() ?: "CASHIER"
         }
     }
@@ -154,6 +152,20 @@ class NewSaleViewModel @Inject constructor(
             _discount.value  = 0.0
             _searchQuery.value = ""
             onSuccess()
+        }
+    }
+
+    // دالة الطباعة المباشرة للفواتير الموجودة مسبقاً دون إعادة خصم المخزون
+    fun printExistingSale(sale: Sale, printerType: String, printerAddress: String) {
+        if (printerType != "NONE" && printerAddress.isNotBlank()) {
+            viewModelScope.launch {
+                val receiptText = generateReceiptText(sale)
+                if (printerType == "BT") {
+                    printViaBluetooth(printerAddress, receiptText)
+                } else if (printerType == "WIFI") {
+                    printViaWifi(printerAddress, 9100, receiptText)
+                }
+            }
         }
     }
 
