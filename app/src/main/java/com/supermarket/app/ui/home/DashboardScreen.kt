@@ -385,7 +385,17 @@ fun SaleDetailsEditDialog(
 ) {
     var editableItems by remember { mutableStateOf(sale.items) }
     var paymentMethod by remember { mutableStateOf(sale.paymentMethod) }
-    var printerAddress by remember { mutableStateOf("192.168.1.100") }
+    var printerIpAddress by remember { mutableStateOf("192.168.1.100") }
+    var printerMacAddress by remember { mutableStateOf("") }
+    val printStatus by newSaleViewModel.printStatus.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(printStatus) {
+        printStatus?.let {
+            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_LONG).show()
+            newSaleViewModel.clearPrintStatus()
+        }
+    }
 
     val updatedTotal = editableItems.sumOf { it.quantity * it.unitPrice }
 
@@ -439,9 +449,9 @@ fun SaleDetailsEditDialog(
                 Divider(color = SMColors.BgCardBorder.copy(alpha = 0.4f))
                 
                 OutlinedTextField(
-                    value = printerAddress,
-                    onValueChange = { printerAddress = it },
-                    label = { Text("عنوان / IP الطابعة الحرارية", fontSize = 11.sp) },
+                    value = printerIpAddress,
+                    onValueChange = { printerIpAddress = it },
+                    label = { Text("IP الطابعة (واي فاي)", fontSize = 11.sp) },
                     modifier = Modifier.fillMaxWidth(),
                     textStyle = androidx.compose.ui.text.TextStyle(color = SMColors.TextPrimary),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
@@ -456,7 +466,8 @@ fun SaleDetailsEditDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Button(
-                        onClick = { newSaleViewModel.printExistingSale(currentSaleState, "BT", printerAddress) },
+                        onClick = { newSaleViewModel.printExistingSale(currentSaleState, "BT", printerMacAddress) },
+                        enabled = printerMacAddress.isNotBlank(),
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = SMColors.Primary.copy(0.12f)),
                         shape = RoundedCornerShape(10.dp),
@@ -469,7 +480,8 @@ fun SaleDetailsEditDialog(
                     }
 
                     Button(
-                        onClick = { newSaleViewModel.printExistingSale(currentSaleState, "WIFI", printerAddress) },
+                        onClick = { newSaleViewModel.printExistingSale(currentSaleState, "WIFI", printerIpAddress) },
+                        enabled = printerIpAddress.isNotBlank(),
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = SMColors.AccentCyan.copy(0.12f)),
                         shape = RoundedCornerShape(10.dp),
