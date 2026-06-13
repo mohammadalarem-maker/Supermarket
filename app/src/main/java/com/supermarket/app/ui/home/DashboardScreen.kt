@@ -443,10 +443,10 @@ fun SaleDetailsEditDialog(
                     onValueChange = { printerAddress = it },
                     label = { Text("عنوان / IP الطابعة الحرارية", fontSize = 11.sp) },
                     modifier = Modifier.fillMaxWidth(),
+                    textStyle = androidx.compose.ui.text.TextStyle(color = SMColors.TextPrimary),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = SMColors.Primary,
-                        unfocusedBorderColor = SMColors.BgCardBorder,
-                        textColor = SMColors.TextPrimary
+                        unfocusedBorderColor = SMColors.BgCardBorder
                     ),
                     singleLine = true
                 )
