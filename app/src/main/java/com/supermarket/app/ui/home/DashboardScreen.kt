@@ -97,9 +97,17 @@ fun DashboardScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
                         onClick = {
-                            barcodeScanner.startScan().addOnSuccessListener { res ->
-                                res.rawValue?.let { code -> viewModel.checkBarcodeOnHome(code) }
-                            }
+                            barcodeScanner.startScan()
+                                .addOnSuccessListener { res ->
+                                    res.rawValue?.let { code -> viewModel.checkBarcodeOnHome(code) }
+                                }
+                                .addOnFailureListener { e ->
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        "خطأ في فتح الكاميرا: تأكد من تحديث خدمات Google Play أو انتظار اكتمال تنزيل الملفات الاستباقية",
+                                        android.widget.Toast.LENGTH_LONG
+                                    ).show()
+                                }
                         },
                         modifier = Modifier.size(40.dp).background(SMColors.Primary.copy(0.12f), RoundedCornerShape(14.dp)).border(1.dp, SMColors.Primary.copy(0.3f), RoundedCornerShape(14.dp))
                     ) { Icon(Icons.Filled.QrCodeScanner, null, tint = SMColors.Primary, modifier = Modifier.size(20.dp)) }
@@ -438,7 +446,7 @@ fun SaleDetailsEditDialog(
                         }
                     }
                 }
-                
+
                 Divider(color = SMColors.BgCardBorder)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("الإجمالي الجديد:", color = SMColors.TextPrimary, fontWeight = FontWeight.SemiBold)
@@ -447,7 +455,7 @@ fun SaleDetailsEditDialog(
 
                 Spacer(modifier = Modifier.height(2.dp))
                 Divider(color = SMColors.BgCardBorder.copy(alpha = 0.4f))
-                
+
                 OutlinedTextField(
                     value = printerIpAddress,
                     onValueChange = { printerIpAddress = it },
@@ -460,7 +468,7 @@ fun SaleDetailsEditDialog(
                     ),
                     singleLine = true
                 )
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
